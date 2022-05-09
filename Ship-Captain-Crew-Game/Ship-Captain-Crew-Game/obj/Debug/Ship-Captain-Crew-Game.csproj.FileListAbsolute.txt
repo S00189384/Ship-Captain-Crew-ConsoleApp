@@ -1,8 +1,7 @@
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\bin\Debug\Ship-Captain-Crew-Game.exe.config
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\bin\Debug\Ship-Captain-Crew-Game.exe
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\bin\Debug\Ship-Captain-Crew-Game.pdb
-D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.csproj.AssemblyReference.cache
-D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.csproj.SuggestedBindingRedirects.cache
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.csproj.CoreCompileInputs.cache
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.exe
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.pdb
+D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.csprojAssemblyReference.cache

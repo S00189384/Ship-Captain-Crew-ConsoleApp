@@ -7,7 +7,10 @@ namespace Ship_Captain_Crew_Game
 {
     public class Turn
     {
-        public bool IsActive;
+        public const int MAX_ROLLS_PER_TURN = 3;
+        public const int MAX_TURNS = 3;
+
+        public bool HasEnded;
         public int RollsRemaining;
         public int NumDiceAvailable;
 
@@ -15,14 +18,19 @@ namespace Ship_Captain_Crew_Game
 
         public Turn()
         {
-            IsActive = true;
-            RollsRemaining = GameData.MAX_ROLLS_PER_TURN;
+            HasEnded = false;
+            RollsRemaining = MAX_ROLLS_PER_TURN;
             NumDiceAvailable = GameData.MAX_NUM_DICE;
         }
 
         public void DisplayRollsRemaining()
         {
             Console.WriteLine($"Rolls remaining: {RollsRemaining}");
+        }
+
+        public void End()
+        {
+            HasEnded = true;
         }
     }
 }

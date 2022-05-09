@@ -12,6 +12,8 @@ namespace Ship_Captain_Crew_Game
 {
     public class DiceRoll
     {
+        private const int DICE_VALUE_PRINT_DELAY = 75;
+
         public int NumberOfDice;
         public List<int> DiceList = new List<int>();
 
@@ -20,13 +22,14 @@ namespace Ship_Captain_Crew_Game
             this.NumberOfDice = NumberOfDice;
         }
 
-        public List<int> Roll()
+        public List<int> RollDice()
         {
-            Random rng = new Random();
             for (int i = 0; i < NumberOfDice; i++)
             {
-                DiceList.Add(rng.Next(GameData.MIN_DICE_VALUE, GameData.MAX_DICE_VALUE + 1));
+                Dice dice = new Dice();
                 Thread.Sleep(10);
+                dice.Roll();
+                DiceList.Add(dice.Value);
             }
 
             return DiceList;
@@ -36,10 +39,14 @@ namespace Ship_Captain_Crew_Game
         {
             Console.WriteLine("Rolling Dice:");
 
-            foreach (var dice in DiceList)
+            for (int i = 0; i < NumberOfDice; i++)
             {
-                Thread.Sleep(75);
-                Console.Write($"{dice} - ");
+                string text = $"{DiceList[i]}";
+                if (i < NumberOfDice - 1)
+                    text += " - ";
+
+                Console.Write(text);
+                Thread.Sleep(DICE_VALUE_PRINT_DELAY);
             }
 
             Console.WriteLine();
