@@ -36,12 +36,10 @@ namespace Ship_Captain_Crew_Game
             {
                 DisplayOptions();
 
+                //Ask user for input.
                 Console.WriteLine("Enter option: ");
-                bool isNumber = int.TryParse(Console.ReadLine(), out enteredOption);
-                if (isNumber && enteredOption >= lowestOption && enteredOption <= highestOption)
-                    InterpretInput(enteredOption);
-                else
-                    Console.WriteLine("Incorrect input try again. \n");
+                int validInput = UserInputManager.AskForNumberWithinRange(lowestOption, highestOption);
+                InterpretInput(validInput);
             }
         }
 

@@ -10,6 +10,8 @@ namespace Ship_Captain_Crew_Game
         public const int MAX_TURNS = 3;
         public const int MIN_PLAYERS_CAN_PLAY = 2;
         public const int MAX_PLAYERS_CAN_PLAY = 5;
+
+        public const bool BOW_TO_STERN_DEFAULT_SETTING = false;
         //public const int MIN_DICE_VALUE = 1;
         //public const int MAX_DICE_VALUE = 6;
 

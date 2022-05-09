@@ -15,41 +15,36 @@ namespace Ship_Captain_Crew_Game
 {
     internal class Program
     {
+        //Data used during each players turn.
         [ThreadStatic()]
         private static Turn turn;
         [ThreadStatic()]
         private static Ship ship;
 
         private static DiceRoll diceRoll;
+
+        //Menus.
         private static Menu mainMenu;
         private static Menu settingsMenu;
 
+        //Settings.
+        private static int numberOfPlayers = GameData.MIN_PLAYERS_CAN_PLAY;
+        private static bool bowToStern = GameData.BOW_TO_STERN_DEFAULT_SETTING;
+
+        //Threads.
         private static object locker = new object();
-
-        private const string YES_INPUT = "y";
-        private const string NO_INPUT = "n";
-
-        private const int NUM_PLAYERS = 3;
         private static List<Thread> playerThreads = new List<Thread>();
 
         private static List<PlayerScore> playerScoreList = new List<PlayerScore>();
 
         static void Main(string[] args)
         {
+            //Read settings from Isolated Storage (if any) and save in memory.
+            ReadSettings();
 
-            int number = Utilities.AskForNumberWithinRange(0, 5);
-            Console.WriteLine(number);
-
-
-
-
-
-
+            //Create menus and show main menu.
             CreateMenus();
             mainMenu.DisplayMenu(showTitle: true);
-
-
-            //StartGame();
 
             Console.WriteLine("End of main");
             Console.ReadKey();
@@ -65,8 +60,8 @@ namespace Ship_Captain_Crew_Game
 
             settingsMenu = new Menu("Settings: ",
 
-                new MenuOption("Select Number of Players", AskToSelectNumberOfPlayers),
-                new MenuOption("yyyy", null),
+                new MenuOption("Select Number of Players", OnSelectNumberOfPlayersSelected),
+                new MenuOption("Bow to Stern", OnBowToSternSelected),
                 new MenuOption("Return", OnReturnFromSettingsSelected));
         }
 
@@ -82,15 +77,42 @@ namespace Ship_Captain_Crew_Game
             mainMenu.DisplayMenu(showTitle: true);
         }
 
-        private static void AskToSelectNumberOfPlayers()
+        private static void OnSelectNumberOfPlayersSelected()
         {
+            Console.Clear();
             Console.WriteLine($"Enter the number of players to play: (Min {GameData.MIN_PLAYERS_CAN_PLAY}, Max {GameData.MAX_PLAYERS_CAN_PLAY})");
-            string input = Console.ReadLine();
+            numberOfPlayers = UserInputManager.AskForNumberWithinRange(GameData.MIN_PLAYERS_CAN_PLAY, GameData.MAX_PLAYERS_CAN_PLAY);
+            Console.Clear();
+            //Save to settings.
+        }
+
+        private static void OnBowToSternSelected()
+        {
+            Console.Clear();
+            Console.WriteLine("In Bow to Stern, 1, 2, and 3 are the ship, captain and crew instead of 6, 5 and 4.");
+            string optionEnabledString = bowToStern == false ? "disabled" : "enabled";
+            Console.WriteLine($"This option is currently {optionEnabledString}.");
+            Console.WriteLine("Do you want to enable Bow to Stern? (y/n)");
+            bowToStern = UserInputManager.AskForBooleanValue();
+            Console.Clear();
         }
         #endregion
 
+        private static void ReadSettings()
+        {
+            //Check isolated storage.
+
+
+
+
+        }
+
+
+
         private static void StartGame()
         {
+            Console.Clear();
+
             CreatePlayerThreads();
             playerThreads.ForEach(thread => thread.Start());
             playerThreads.ForEach(thread => thread.Join());
@@ -98,7 +120,7 @@ namespace Ship_Captain_Crew_Game
 
         private static void CreatePlayerThreads() 
         {
-            for (int i = 0; i < NUM_PLAYERS; i++)
+            for (int i = 0; i < numberOfPlayers; i++)
             {
                 Thread thread = new Thread(PlayTurn);
                 thread.Name = $"Player {i + 1}";
@@ -154,8 +176,6 @@ namespace Ship_Captain_Crew_Game
                                 ship.SetCargoValue(diceRoll);
                                 //Display this value.
                                 ship.DisplayCargoValue();
-                                //Ask if they wish to gamble their cargo value.
-                                //AskForRollCargoUpdate(turn, ship);
                             }
                         }
                     }
@@ -192,24 +212,37 @@ namespace Ship_Captain_Crew_Game
 
             string input = string.Empty;
 
-            while (input != YES_INPUT && input != NO_INPUT)
+            Console.WriteLine("Do you wish to roll to get a better cargo? (y/n)");
+            bool userWantsToRollAgain = UserInputManager.AskForBooleanValue();
+            if(userWantsToRollAgain)
             {
-                Console.WriteLine("Do you wish to roll to get a better cargo? (y/n)");
-                input = Console.ReadLine().ToLower();
-                Console.WriteLine();
-
-                if (input == YES_INPUT)
-                {
-                    //Roll dice for better cargo score attempt.
-                    DiceRoll currentDiceRoll = GenerateDiceRoll(turn.NumDiceAvailable, ref turn.RollsRemaining);
-                    ship.SetCargoValue(currentDiceRoll);
-                    ship.DisplayCargoValue();
-                }
-                else if (input == NO_INPUT)
-                {
-                    turn.End();
-                }
+                //Roll dice for better cargo score attempt.
+                DiceRoll currentDiceRoll = GenerateDiceRoll(turn.NumDiceAvailable, ref turn.RollsRemaining);
+                ship.SetCargoValue(currentDiceRoll);
+                ship.DisplayCargoValue();
             }
+            else
+                turn.End();
+
+
+            //while (input != UserInputManager.YES_INPUT && input != UserInputManager.NO_INPUT)
+            //{
+            //    Console.WriteLine("Do you wish to roll to get a better cargo? (y/n)");
+            //    input = Console.ReadLine().ToLower();
+            //    Console.WriteLine();
+
+            //    if (input == UserInputManager.YES_INPUT)
+            //    {
+            //        //Roll dice for better cargo score attempt.
+            //        DiceRoll currentDiceRoll = GenerateDiceRoll(turn.NumDiceAvailable, ref turn.RollsRemaining);
+            //        ship.SetCargoValue(currentDiceRoll);
+            //        ship.DisplayCargoValue();
+            //    }
+            //    else if (input == UserInputManager.NO_INPUT)
+            //    {
+            //        turn.End();
+            //    }
+            //}
         }
 
         private static DiceRoll GenerateDiceRoll(int numDice,ref int rollsRemaining)
@@ -234,7 +267,7 @@ namespace Ship_Captain_Crew_Game
         {
             Console.WriteLine("Enter y to roll dice.");
             string input = string.Empty;
-            while (input != YES_INPUT)
+            while (input != UserInputManager.YES_INPUT)
             {
                 input = Console.ReadLine().ToLower();
             }
