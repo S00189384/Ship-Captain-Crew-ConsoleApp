@@ -19,7 +19,7 @@ namespace Ship_Captain_Crew_Game
 
         public override string ToString()
         {
-            return $"{Name} scored {Score}.";
+            return $"{Name} : {Score}";
         }
     }
 }

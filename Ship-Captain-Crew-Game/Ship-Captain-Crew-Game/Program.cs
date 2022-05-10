@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -23,18 +24,21 @@ namespace Ship_Captain_Crew_Game
 
         private static DiceRoll diceRoll;
 
+        private static IsolatedStorageManager isolatedStorageManager;
+
         //Menus.
         private static Menu mainMenu;
         private static Menu settingsMenu;
 
         //Settings.
-        private static int numberOfPlayers = GameData.MIN_PLAYERS_CAN_PLAY;
-        private static bool bowToStern = GameData.BOW_TO_STERN_DEFAULT_SETTING;
+        //private static int numberOfPlayers = GameSettings.MIN_PLAYERS_CAN_PLAY;
+        //private static bool bowToStern = GameSettings.BOW_TO_STERN_DEFAULT_SETTING;
 
         //Threads.
         private static object locker = new object();
         private static List<Thread> playerThreads = new List<Thread>();
 
+        private static GameManager gameManager;
         private static List<PlayerScore> playerScoreList = new List<PlayerScore>();
 
         static void Main(string[] args)
@@ -80,8 +84,8 @@ namespace Ship_Captain_Crew_Game
         private static void OnSelectNumberOfPlayersSelected()
         {
             Console.Clear();
-            Console.WriteLine($"Enter the number of players to play: (Min {GameData.MIN_PLAYERS_CAN_PLAY}, Max {GameData.MAX_PLAYERS_CAN_PLAY})");
-            numberOfPlayers = UserInputManager.AskForNumberWithinRange(GameData.MIN_PLAYERS_CAN_PLAY, GameData.MAX_PLAYERS_CAN_PLAY);
+            Console.WriteLine($"Enter the number of players to play: (Min {GameSettings.MIN_PLAYERS_CAN_PLAY}, Max {GameSettings.MAX_PLAYERS_CAN_PLAY})");
+            GameSettings.Instance.NumPlayers = UserInputManager.AskForNumberWithinRange(GameSettings.MIN_PLAYERS_CAN_PLAY, GameSettings.MAX_PLAYERS_CAN_PLAY);
             Console.Clear();
             //Save to settings.
         }
@@ -90,21 +94,50 @@ namespace Ship_Captain_Crew_Game
         {
             Console.Clear();
             Console.WriteLine("In Bow to Stern, 1, 2, and 3 are the ship, captain and crew instead of 6, 5 and 4.");
-            string optionEnabledString = bowToStern == false ? "disabled" : "enabled";
+            string optionEnabledString = GameSettings.Instance.BowToStern == false ? "disabled" : "enabled";
             Console.WriteLine($"This option is currently {optionEnabledString}.");
             Console.WriteLine("Do you want to enable Bow to Stern? (y/n)");
-            bowToStern = UserInputManager.AskForBooleanValue();
+            GameSettings.Instance.BowToStern = UserInputManager.AskForBooleanValue();
             Console.Clear();
         }
         #endregion
 
         private static void ReadSettings()
         {
-            //Check isolated storage.
+            isolatedStorageManager = new IsolatedStorageManager(GameSettings.ISOLATED_STORAGE_FOLDER_NAME,GameSettings.ISOLATED_STORAGE_FILE_NAME);
 
+            //Check if file is in isolated storage.
+            Thread checkFolderExistsIsolatedStorage = new Thread(new ThreadStart(isolatedStorageManager.CheckDirectoryExists));
+            checkFolderExistsIsolatedStorage.Start();
+            checkFolderExistsIsolatedStorage.Join();
 
+            bool jsonFileExists = isolatedStorageManager.jsonFileExists;
+            string json = string.Empty;
 
+            //If file existed before - read json.
+            if (jsonFileExists)
+            {
+                Thread readFromIsolatedStorage = new Thread(new ThreadStart(isolatedStorageManager.readFromStorage));
+                readFromIsolatedStorage.Start();
+                readFromIsolatedStorage.Join();
 
+                json = isolatedStorageManager.json;
+
+                if (!string.IsNullOrEmpty(json))
+                {
+                    SettingsDTO settings = JsonConvert.DeserializeObject<SettingsDTO>(json);
+                    GameSettings.Instance.UpdateSettingsFromJSON(settings);
+                }
+            }
+            else
+            {
+                Thread writeToIsolatedStorage = new Thread(new ParameterizedThreadStart(isolatedStorageManager.writeToStorage));
+                SettingsDTO settingsDTO = new SettingsDTO(GameSettings.BOW_TO_STERN_DEFAULT_SETTING, GameSettings.MIN_PLAYERS_CAN_PLAY);
+                json = JsonConvert.SerializeObject(settingsDTO).ToString();
+                writeToIsolatedStorage.Start(json);
+
+                GameSettings.Instance.SetDefaultSettings();
+            }
         }
 
 
@@ -113,12 +146,44 @@ namespace Ship_Captain_Crew_Game
         {
             Console.Clear();
 
-            CreatePlayerThreads();
+            gameManager = new GameManager();
+
+            CreatePlayerThreads(GameSettings.Instance.NumPlayers);
             playerThreads.ForEach(thread => thread.Start());
             playerThreads.ForEach(thread => thread.Join());
+
+            //Wait until each players turn is over.
+            //After round / game is over.
+            playerThreads.Clear();
+
+            //Determine who won.
+            if(gameManager.ArePlayersDrawn())
+                StartSuddenDeath(gameManager.GetTiedPlayers());
+            else
+            {
+                gameManager.DisplayPlayerScores();
+                gameManager.DisplayWinningPlayer();
+
+                Console.WriteLine("Press any key to continue");
+                Console.ReadKey();
+            }
         }
 
-        private static void CreatePlayerThreads() 
+        private static void StartSuddenDeath(List<PlayerScore> tiedPlayerList)
+        {
+            for (int i = 0; i < tiedPlayerList.Count; i++)
+            {
+                Thread thread = new Thread(PlayTurn);
+                thread.Name = tiedPlayerList[i].Name;
+
+                playerThreads.Add(thread);
+            }
+
+            Console.WriteLine("Sudden death " + playerThreads.Count);
+
+        }
+
+        private static void CreatePlayerThreads(int numberOfPlayers) 
         {
             for (int i = 0; i < numberOfPlayers; i++)
             {
@@ -137,9 +202,10 @@ namespace Ship_Captain_Crew_Game
                 turn = new Turn();
                 ship = new Ship();
 
-                while (!turn.HasEnded)
+                while (!turn.HasEnded && turn.HasRollsRemaining)
                 {
                     string currentPlayerName = Thread.CurrentThread.Name;
+
                     Console.WriteLine($"#########{currentPlayerName}#########\n");
 
                     if (turn.HasRollsRemaining)
@@ -185,7 +251,7 @@ namespace Ship_Captain_Crew_Game
                         if (!ship.HasAllShipFeatures)
                             ship.DisplayCargoValue();
 
-                        playerScoreList.Add(new PlayerScore(ship.CargoValue, currentPlayerName));
+                        gameManager.AddPlayerScore(new PlayerScore(ship.CargoValue, currentPlayerName));
                         turn.End();
                     }
 
@@ -199,8 +265,8 @@ namespace Ship_Captain_Crew_Game
             }
             finally
             {
-                Console.WriteLine($"{Thread.CurrentThread.Name} scored {ship.CargoValue}");
-                Console.WriteLine("Turn ended.");
+                //Console.WriteLine($"{Thread.CurrentThread.Name} scored {ship.CargoValue}");
+                //Console.WriteLine("Turn ended.");
                 Monitor.Pulse(locker);
                 Monitor.Exit(locker);
             }
@@ -208,10 +274,11 @@ namespace Ship_Captain_Crew_Game
 
         private static void AskForRollCargoUpdate(Turn turn, Ship ship)
         {
-            //while (turn.HasRollsRemaining && !turn.HasEnded)
+            turn.DisplayRollsRemaining();
 
             string input = string.Empty;
 
+            ship.DisplayCargoValue();
             Console.WriteLine("Do you wish to roll to get a better cargo? (y/n)");
             bool userWantsToRollAgain = UserInputManager.AskForBooleanValue();
             if(userWantsToRollAgain)
@@ -223,26 +290,6 @@ namespace Ship_Captain_Crew_Game
             }
             else
                 turn.End();
-
-
-            //while (input != UserInputManager.YES_INPUT && input != UserInputManager.NO_INPUT)
-            //{
-            //    Console.WriteLine("Do you wish to roll to get a better cargo? (y/n)");
-            //    input = Console.ReadLine().ToLower();
-            //    Console.WriteLine();
-
-            //    if (input == UserInputManager.YES_INPUT)
-            //    {
-            //        //Roll dice for better cargo score attempt.
-            //        DiceRoll currentDiceRoll = GenerateDiceRoll(turn.NumDiceAvailable, ref turn.RollsRemaining);
-            //        ship.SetCargoValue(currentDiceRoll);
-            //        ship.DisplayCargoValue();
-            //    }
-            //    else if (input == UserInputManager.NO_INPUT)
-            //    {
-            //        turn.End();
-            //    }
-            //}
         }
 
         private static DiceRoll GenerateDiceRoll(int numDice,ref int rollsRemaining)

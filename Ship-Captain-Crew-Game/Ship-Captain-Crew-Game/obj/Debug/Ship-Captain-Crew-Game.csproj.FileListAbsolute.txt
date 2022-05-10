@@ -5,3 +5,6 @@ D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Gam
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.exe
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.pdb
 D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.csprojAssemblyReference.cache
+D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\bin\Debug\Newtonsoft.Json.dll
+D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\bin\Debug\Newtonsoft.Json.xml
+D:\OOP\Ship-Captain-Crew-ConsoleApp\Ship-Captain-Crew-Game\Ship-Captain-Crew-Game\obj\Debug\Ship-Captain-Crew-Game.csproj.CopyComplete
