@@ -52,7 +52,6 @@
     <Compile Include="GameManager.cs" />
     <Compile Include="GameSettings.cs" />
     <Compile Include="IsolatedStorageManager.cs" />
-    <Compile Include="MainMenu.cs" />
     <Compile Include="Menu.cs" />
     <Compile Include="PlayerScore.cs" />
     <Compile Include="Turn.cs" />

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Ship_Captain_Crew_Game
+﻿namespace Ship_Captain_Crew_Game
 {
+    //Player score at end of round.
     public class PlayerScore
     {
         public string Name;

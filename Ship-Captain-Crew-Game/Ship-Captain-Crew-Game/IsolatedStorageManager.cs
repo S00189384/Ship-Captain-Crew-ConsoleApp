@@ -40,18 +40,7 @@ namespace Ship_Captain_Crew_Game
                 {
                     if (!store.FileExists(pathToTextFile))
                     {
-                        //store.CreateDirectory(filePath);
                         jsonFileExists = false;
-
-                        //using (IsolatedStorageFileStream isoStorageTxtFile =
-                        //store.OpenFile(pathToTextFile, FileMode.Create, FileAccess.Write))
-                        //{
-                        //    using (StreamWriter writer = new StreamWriter(isoStorageTxtFile))
-                        //    {
-                        //        writer.Write(string.Empty);
-                        //        json = string.Empty;
-                        //    }
-                        //}
                     }
                     else
                     {
@@ -120,7 +109,7 @@ namespace Ship_Captain_Crew_Game
                 }
                 catch (Exception e)
                 {
-                    //Console.WriteLine(e.Message);
+                    Console.WriteLine(e.Message);
                 }
                 finally
                 {

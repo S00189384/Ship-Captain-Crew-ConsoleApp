@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ship_Captain_Crew_Game
 {
-    //Numbered menu with options base class.
+    //Class that represents a numbered menu with options.
 
     public class Menu
     {

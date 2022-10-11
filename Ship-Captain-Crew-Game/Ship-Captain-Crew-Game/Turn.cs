@@ -7,6 +7,7 @@ namespace Ship_Captain_Crew_Game
 {
     public class Turn
     {
+        public const int MAX_NUM_DICE_PER_TURN = 5;
         public const int MAX_ROLLS_PER_TURN = 3;
         public const int MAX_TURNS = 3;
 
@@ -20,7 +21,7 @@ namespace Ship_Captain_Crew_Game
         {
             HasEnded = false;
             RollsRemaining = MAX_ROLLS_PER_TURN;
-            NumDiceAvailable = GameData.MAX_NUM_DICE;
+            NumDiceAvailable = MAX_NUM_DICE_PER_TURN;
         }
 
         public void DisplayRollsRemaining()

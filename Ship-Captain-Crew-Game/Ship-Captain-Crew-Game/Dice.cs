@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace Ship_Captain_Crew_Game
 {
+    //A class to represent a dice.
+    //Has a value and can be rolled generating a random number.
     public class Dice
     {
         public const int MIN_DICE_VALUE = 1;

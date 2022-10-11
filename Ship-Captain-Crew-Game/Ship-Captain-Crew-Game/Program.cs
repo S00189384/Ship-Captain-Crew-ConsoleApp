@@ -1,16 +1,9 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 //https://www.dicegamedepot.com/ship-captain-and-crew-dice-game-rules/
-
-//Settings to do -
-//No. players.
-//Bow to stern - 123 - 654
-//Dropping anchor - 
 
 namespace Ship_Captain_Crew_Game
 {
@@ -30,16 +23,11 @@ namespace Ship_Captain_Crew_Game
         private static Menu mainMenu;
         private static Menu settingsMenu;
 
-        //Settings.
-        //private static int numberOfPlayers = GameSettings.MIN_PLAYERS_CAN_PLAY;
-        //private static bool bowToStern = GameSettings.BOW_TO_STERN_DEFAULT_SETTING;
-
         //Threads.
         private static object locker = new object();
         private static List<Thread> playerThreads = new List<Thread>();
 
         private static GameManager gameManager;
-        private static List<PlayerScore> playerScoreList = new List<PlayerScore>();
 
         static void Main(string[] args)
         {
@@ -86,22 +74,23 @@ namespace Ship_Captain_Crew_Game
             Console.Clear();
             Console.WriteLine($"Enter the number of players to play: (Min {GameSettings.MIN_PLAYERS_CAN_PLAY}, Max {GameSettings.MAX_PLAYERS_CAN_PLAY})");
             GameSettings.Instance.NumPlayers = UserInputManager.AskForNumberWithinRange(GameSettings.MIN_PLAYERS_CAN_PLAY, GameSettings.MAX_PLAYERS_CAN_PLAY);
+            SaveSettingsToIsolatedStorage();
             Console.Clear();
-            //Save to settings.
         }
 
         private static void OnBowToSternSelected()
         {
             Console.Clear();
             Console.WriteLine("In Bow to Stern, 1, 2, and 3 are the ship, captain and crew instead of 6, 5 and 4.");
-            string optionEnabledString = GameSettings.Instance.BowToStern == false ? "disabled" : "enabled";
-            Console.WriteLine($"This option is currently {optionEnabledString}.");
+            Console.WriteLine($"This option is currently {GameSettings.Instance.GetBowToSternStatus}.");
             Console.WriteLine("Do you want to enable Bow to Stern? (y/n)");
             GameSettings.Instance.BowToStern = UserInputManager.AskForBooleanValue();
+            SaveSettingsToIsolatedStorage();
             Console.Clear();
         }
         #endregion
 
+        #region Saving / Reading Settings 
         private static void ReadSettings()
         {
             isolatedStorageManager = new IsolatedStorageManager(GameSettings.ISOLATED_STORAGE_FOLDER_NAME,GameSettings.ISOLATED_STORAGE_FILE_NAME);
@@ -114,33 +103,43 @@ namespace Ship_Captain_Crew_Game
             bool jsonFileExists = isolatedStorageManager.jsonFileExists;
             string json = string.Empty;
 
-            //If file existed before - read json.
-            if (jsonFileExists)
+            if (jsonFileExists) //If file existed before - read json.
             {
                 Thread readFromIsolatedStorage = new Thread(new ThreadStart(isolatedStorageManager.readFromStorage));
                 readFromIsolatedStorage.Start();
                 readFromIsolatedStorage.Join();
 
+                //Check if json is valid.
                 json = isolatedStorageManager.json;
-
                 if (!string.IsNullOrEmpty(json))
                 {
                     SettingsDTO settings = JsonConvert.DeserializeObject<SettingsDTO>(json);
                     GameSettings.Instance.UpdateSettingsFromJSON(settings);
                 }
             }
-            else
+            else //Json didn't exist - write default settings.
             {
-                Thread writeToIsolatedStorage = new Thread(new ParameterizedThreadStart(isolatedStorageManager.writeToStorage));
-                SettingsDTO settingsDTO = new SettingsDTO(GameSettings.BOW_TO_STERN_DEFAULT_SETTING, GameSettings.MIN_PLAYERS_CAN_PLAY);
-                json = JsonConvert.SerializeObject(settingsDTO).ToString();
-                writeToIsolatedStorage.Start(json);
-
                 GameSettings.Instance.SetDefaultSettings();
+                SaveDefaultSettingsToIsolatedStorage();
             }
         }
 
+        private static void SaveSettingsToIsolatedStorage()
+        {
+            Thread writeToIsolatedStorage = new Thread(new ParameterizedThreadStart(isolatedStorageManager.writeToStorage));
+            SettingsDTO settingsDTO = new SettingsDTO(GameSettings.Instance.BowToStern, GameSettings.Instance.NumPlayers);
+            string json = JsonConvert.SerializeObject(settingsDTO).ToString();
+            writeToIsolatedStorage.Start(json);
+        }
 
+        private static void SaveDefaultSettingsToIsolatedStorage()
+        {
+            Thread writeToIsolatedStorage = new Thread(new ParameterizedThreadStart(isolatedStorageManager.writeToStorage));
+            SettingsDTO settingsDTO = new SettingsDTO(GameSettings.BOW_TO_STERN_DEFAULT_SETTING, GameSettings.MIN_PLAYERS_CAN_PLAY);
+            string json = JsonConvert.SerializeObject(settingsDTO).ToString();
+            writeToIsolatedStorage.Start(json);
+        }
+        #endregion
 
         private static void StartGame()
         {
@@ -152,35 +151,25 @@ namespace Ship_Captain_Crew_Game
             playerThreads.ForEach(thread => thread.Start());
             playerThreads.ForEach(thread => thread.Join());
 
-            //Wait until each players turn is over.
             //After round / game is over.
             playerThreads.Clear();
 
+
+            gameManager.DisplayPlayerScores();
+
             //Determine who won.
-            if(gameManager.ArePlayersDrawn())
-                StartSuddenDeath(gameManager.GetTiedPlayers());
+            if (gameManager.ArePlayersDrawn())
+            {
+                gameManager.DisplayTiedPlayers();
+                DisplayPressAnyKeyReturnToMenuPrompt();
+                Console.Clear();
+            }
             else
-            {
-                gameManager.DisplayPlayerScores();
+            {          
                 gameManager.DisplayWinningPlayer();
-
-                Console.WriteLine("Press any key to continue");
-                Console.ReadKey();
+                DisplayPressAnyKeyReturnToMenuPrompt();
+                Console.Clear();
             }
-        }
-
-        private static void StartSuddenDeath(List<PlayerScore> tiedPlayerList)
-        {
-            for (int i = 0; i < tiedPlayerList.Count; i++)
-            {
-                Thread thread = new Thread(PlayTurn);
-                thread.Name = tiedPlayerList[i].Name;
-
-                playerThreads.Add(thread);
-            }
-
-            Console.WriteLine("Sudden death " + playerThreads.Count);
-
         }
 
         private static void CreatePlayerThreads(int numberOfPlayers) 
@@ -204,9 +193,7 @@ namespace Ship_Captain_Crew_Game
 
                 while (!turn.HasEnded && turn.HasRollsRemaining)
                 {
-                    string currentPlayerName = Thread.CurrentThread.Name;
-
-                    Console.WriteLine($"#########{currentPlayerName}#########\n");
+                    Console.WriteLine($"{Thread.CurrentThread.Name}'s Turn! \n");
 
                     if (turn.HasRollsRemaining)
                     {
@@ -251,7 +238,6 @@ namespace Ship_Captain_Crew_Game
                         if (!ship.HasAllShipFeatures)
                             ship.DisplayCargoValue();
 
-                        gameManager.AddPlayerScore(new PlayerScore(ship.CargoValue, currentPlayerName));
                         turn.End();
                     }
 
@@ -265,8 +251,7 @@ namespace Ship_Captain_Crew_Game
             }
             finally
             {
-                //Console.WriteLine($"{Thread.CurrentThread.Name} scored {ship.CargoValue}");
-                //Console.WriteLine("Turn ended.");
+                gameManager.AddPlayerScore(new PlayerScore(ship.CargoValue, Thread.CurrentThread.Name));
                 Monitor.Pulse(locker);
                 Monitor.Exit(locker);
             }
@@ -318,6 +303,11 @@ namespace Ship_Captain_Crew_Game
             {
                 input = Console.ReadLine().ToLower();
             }
+        }
+        private static void DisplayPressAnyKeyReturnToMenuPrompt()
+        {
+            Console.WriteLine("Press any key to return to menu.");
+            Console.ReadKey();
         }
     }
 }
